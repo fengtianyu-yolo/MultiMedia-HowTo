@@ -40,7 +40,7 @@ class ViewController: NSViewController {
     // MARK: - Event Action
     
     @objc func buttonClicked() {
-        print("record ")
+        greeting()
     }
 
 
