@@ -346,6 +346,7 @@
 				HEADER_SEARCH_PATHS = "/Users/bytedance/personal/project/MultiMedia_Howto/MultiMedia_Howto/include/**";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				INFOPLIST_KEY_NSMainStoryboardFile = Main;
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "要使用麦克风";
 				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -379,6 +380,7 @@
 				HEADER_SEARCH_PATHS = "/Users/bytedance/personal/project/MultiMedia_Howto/MultiMedia_Howto/include/**";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				INFOPLIST_KEY_NSMainStoryboardFile = Main;
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "要使用麦克风";
 				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
