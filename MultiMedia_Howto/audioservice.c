@@ -9,8 +9,11 @@
 #include "libavutil/avutil.h"
 #include "libavdevice/avdevice.h"
 #include "libavformat/avformat.h"
+#include "libavcodec/avcodec.h"
+#include <unistd.h>
 
 void greeting() {
+    
     printf("ok! you call c function success. \n");
     
     av_log_set_level(AV_LOG_DEBUG);
@@ -29,8 +32,22 @@ void greeting() {
     // 设备的采集格式
     AVInputFormat *input_format = av_find_input_format("avfoundation");
     
+    // 打开音频输入设备
     int open_result = avformat_open_input(&fmt_ctx, devicename, input_format, &options);
     if (open_result == 0) {
         printf("设备成功打开 \n");
     }
+    
+    // 定义数据包变量，读取的音频数据就放到这个数据包中
+    AVPacket pkt;
+    // 初始化数据包
+    av_init_packet(&pkt);
+    // 延迟1s，不然设备还没有准备好
+    sleep(1);
+    // 读取音频数据，并将数据放入到 packet中
+    int read_result = av_read_frame(fmt_ctx, &pkt);
+    if (read_result == 0) {
+        printf("音频数据读取成功了 \n");
+    }
+    
 }
