@@ -18,6 +18,13 @@ void greeting() {
     
     av_log_set_level(AV_LOG_DEBUG);
     av_log(NULL, AV_LOG_DEBUG, "ok! avutil success call ! \n");
+
+}
+
+// 定义一个变量，指示当前是否在录制中
+static int recoding = 0;
+
+void record() {
     
     // 注册设备
     avdevice_register_all();
@@ -42,27 +49,39 @@ void greeting() {
     AVPacket pkt;
     // 初始化数据包
     av_init_packet(&pkt);
+    
     // 延迟1s，不然设备还没有准备好
     sleep(1);
     
     // 打开文件
-    FILE *outfile = fopen("/User/Desktop/audio.pcm", "wb+");
+    FILE *outfile = fopen("/Users/bytedance/Desktop/audio.pcm", "wb+");
+
+    // 定义变量存储 读取音频数据的结果
+    int read_result = 0;
     
-    // 读取音频数据，并将数据放入到 packet中
-    int read_result = av_read_frame(fmt_ctx, &pkt);
-    if (read_result == 0) {
-        printf("音频数据读取成功了 \n");
-    }
-    // 将音频数据写入文件
-    fwrite(pkt.data, pkt.size, 1, outfile);
-    // 立即将缓冲区的文件内容写入到文件中
-    fflush(outfile);
+    do {
+        // 读取音频数据，并将数据放入到 packet中
+        read_result = av_read_frame(fmt_ctx, &pkt);
+        
+        // 读取到音频数据之后，将数据写入到文件中
+        if (read_result == 0) {
+            fwrite(pkt.data, pkt.size, 1, outfile);
+            fflush(outfile);
+        }
+
+        // 释放packet的内容
+        av_packet_unref(&pkt);
+    }while((read_result == 0 || read_result == -35) && recoding == 1);
+
+    printf("录制结束了 \n");
+    
     // 关闭文件
     fclose(outfile);
     
-    // packet
-    av_packet_unref(&pkt);
     // 释放上下文环境
     avformat_close_input(&fmt_ctx);
-    
+}
+
+void updateRecodeState(int recodeState) {
+    recoding = recodeState;
 }

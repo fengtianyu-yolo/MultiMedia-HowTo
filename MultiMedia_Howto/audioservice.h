@@ -12,4 +12,7 @@
 
 void greeting(void) ;
 
+void record(void);
+void updateRecodeState(int recodeState);
+
 #endif /* audioservice_h */
