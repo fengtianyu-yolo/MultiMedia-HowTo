@@ -7,6 +7,8 @@
 
 #include "audioservice.h"
 #include "libavutil/avutil.h"
+#include "libavdevice/avdevice.h"
+#include "libavformat/avformat.h"
 
 void greeting() {
     printf("ok! you call c function success. \n");
