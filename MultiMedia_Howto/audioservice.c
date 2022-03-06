@@ -11,7 +11,7 @@
 #include "libavformat/avformat.h"
 #include "libavcodec/avcodec.h"
 #include <unistd.h>
-//#include "lib"
+#include <libswresample/swresample.h>
 
 void greeting() {
     
@@ -30,6 +30,7 @@ void record() {
     // 注册设备
     avdevice_register_all();
     
+    /* 音频数据读取相关变量的定义 */
     // 定义环境上下文变量
     AVFormatContext *fmt_ctx = NULL;
     // 定义 devicename 参数，指示从哪个设备读取数据； ':0'，冒号前面表示为视频设备；冒号后面代表音频设备，0表示第一个音频设备
@@ -39,6 +40,29 @@ void record() {
     
     // 设备的采集格式
     AVInputFormat *input_format = av_find_input_format("avfoundation");
+    
+    /* 重采样相关变量的定义 */
+    // 定义变量 存储输入缓冲区的地址
+    uint8_t **src_data = NULL;
+    // 定义 输入缓冲区大小
+    int src_linesize = 0;
+    // 创建输入缓冲区
+    av_samples_alloc_array_and_samples(&src_data, &src_linesize, 1, 512, AV_SAMPLE_FMT_FLT, 0);
+    
+    // 定义输出缓冲区的地址
+    uint8_t **dst_data = NULL;
+    // 定义输出缓冲区的大小
+    int dst_linesize = 0;
+    // 创建输出缓冲区
+    av_samples_alloc_array_and_samples(&dst_data, &dst_linesize, 1, 512, AV_SAMPLE_FMT_S16, 0);
+    
+    
+    // 创建重采样上下文
+    SwrContext *swr_ctx = NULL;
+    
+    // 初始化重采样上下文
+    swr_ctx = swr_alloc_set_opts(NULL, AV_CH_LAYOUT_MONO, AV_SAMPLE_FMT_S16, 48000, AV_CH_LAYOUT_MONO, AV_SAMPLE_FMT_FLT, 48000, 0, NULL);
+    swr_init(swr_ctx);
     
     // 打开音频输入设备
     int open_result = avformat_open_input(&fmt_ctx, devicename, input_format, &options);
@@ -56,6 +80,7 @@ void record() {
     
     // 打开一个文件，用于将读取到的数据写入
     FILE *outfile = fopen("/Users/bytedance/Desktop/audio.pcm", "wb+");
+    FILE *originfile = fopen("/Users/bytedance/Desktop/origin_audio.pcm", "wb+");
 
     // 定义变量存储 读取音频数据的结果
     int read_result = 0;
@@ -67,8 +92,20 @@ void record() {
         // 读取到音频数据之后，将数据写入到文件中
         if (read_result == 0) {
             printf("数据大小是 %d \n", pkt.size); // 这里打印出来显示是 2048，也就是一帧的音频数据大小是2048
-            fwrite(pkt.data, pkt.size, 1, outfile);
+            
+            // 把数据拷贝到输入缓冲区
+            memcpy((void *)src_data[0], (void *)pkt.data, pkt.size);
+            
+            // 重采样
+            swr_convert(swr_ctx, dst_data, 512, (const uint8_t **)src_data, 512);
+
+            fwrite(dst_data[0], 1, dst_linesize, outfile);
+            fwrite(pkt.data, 1, pkt.size, originfile);
+            
+            printf("重采样的数据大小 = %d", dst_linesize);
+
             fflush(outfile);
+            fflush(originfile);
         }
 
         // 释放packet的内容
@@ -79,6 +116,22 @@ void record() {
     
     // 关闭文件
     fclose(outfile);
+    fclose(originfile);
+    
+    // 释放输入缓冲区
+    if (src_data){
+        av_freep(&src_data[0]);
+    }
+    av_freep(&src_data);
+    
+    // 释放 输出缓冲区
+    if (dst_data) {
+        av_freep(&dst_data[0]);
+    }
+    av_freep(&dst_data);
+    
+    // 释放重采样上下文
+    swr_free(&swr_ctx);
     
     // 释放上下文环境
     avformat_close_input(&fmt_ctx);

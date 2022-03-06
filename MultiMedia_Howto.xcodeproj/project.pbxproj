@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		2B49440427D465790040D176 /* libswresample.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 2B49440327D465790040D176 /* libswresample.dylib */; };
+		2B49440527D465790040D176 /* libswresample.dylib in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 2B49440327D465790040D176 /* libswresample.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		2B65260C27CB1BD40008861C /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B65260B27CB1BD40008861C /* AppDelegate.swift */; };
 		2B65260E27CB1BD40008861C /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B65260D27CB1BD40008861C /* ViewController.swift */; };
 		2B65261027CB1BD60008861C /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 2B65260F27CB1BD60008861C /* Assets.xcassets */; };
@@ -37,6 +39,7 @@
 				2B65262827CB26160008861C /* libavresample.dylib in Embed Libraries */,
 				2B65263027CB26160008861C /* libavcodec.dylib in Embed Libraries */,
 				2B65262C27CB26160008861C /* libavdevice.dylib in Embed Libraries */,
+				2B49440527D465790040D176 /* libswresample.dylib in Embed Libraries */,
 				2B65262A27CB26160008861C /* libavutil.dylib in Embed Libraries */,
 				2B65262627CB26160008861C /* libavfilter.dylib in Embed Libraries */,
 			);
@@ -46,6 +49,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		2B49440327D465790040D176 /* libswresample.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libswresample.dylib; path = MultiMedia_Howto/libs/libswresample.dylib; sourceTree = "<group>"; };
 		2B65260827CB1BD40008861C /* MultiMedia_Howto.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MultiMedia_Howto.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		2B65260B27CB1BD40008861C /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		2B65260D27CB1BD40008861C /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
@@ -72,6 +76,7 @@
 				2B65262727CB26160008861C /* libavresample.dylib in Frameworks */,
 				2B65262F27CB26160008861C /* libavcodec.dylib in Frameworks */,
 				2B65262B27CB26160008861C /* libavdevice.dylib in Frameworks */,
+				2B49440427D465790040D176 /* libswresample.dylib in Frameworks */,
 				2B65262927CB26160008861C /* libavutil.dylib in Frameworks */,
 				2B65262527CB26160008861C /* libavfilter.dylib in Frameworks */,
 			);
@@ -115,6 +120,7 @@
 		2B65261E27CB26150008861C /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				2B49440327D465790040D176 /* libswresample.dylib */,
 				2B65262427CB26160008861C /* libavcodec.dylib */,
 				2B65262227CB26160008861C /* libavdevice.dylib */,
 				2B65261F27CB26160008861C /* libavfilter.dylib */,
