@@ -47,7 +47,13 @@ void record() {
     // 定义 输入缓冲区大小
     int src_linesize = 0;
     // 创建输入缓冲区
-    av_samples_alloc_array_and_samples(&src_data, &src_linesize, 1, 512, AV_SAMPLE_FMT_FLT, 0);
+    av_samples_alloc_array_and_samples(
+                                       &src_data, // 输入的缓冲区地址
+                                       &src_linesize, // 输入的大小
+                                       1, // 输入的声道数
+                                       512, // 采样数
+                                       AV_SAMPLE_FMT_FLT, // 输入的位数 32位
+                                       0);
     
     // 定义输出缓冲区的地址
     uint8_t **dst_data = NULL;
@@ -61,7 +67,17 @@ void record() {
     SwrContext *swr_ctx = NULL;
     
     // 初始化重采样上下文
-    swr_ctx = swr_alloc_set_opts(NULL, AV_CH_LAYOUT_MONO, AV_SAMPLE_FMT_S16, 48000, AV_CH_LAYOUT_MONO, AV_SAMPLE_FMT_FLT, 48000, 0, NULL);
+    swr_ctx = swr_alloc_set_opts(
+                                 NULL,
+                                 AV_CH_LAYOUT_MONO, // 输出的声道格式，单声道，在中间
+                                 AV_SAMPLE_FMT_S16, // 输出的采样格式 16位的
+                                 48000, // 输出的采样率
+                                 AV_CH_LAYOUT_MONO, // 输入的声道格式，单声道，在中间位置的布局格式
+                                 AV_SAMPLE_FMT_FLT, // 输入的采样格式 32位的
+                                 48000, // 输入的采样率 32位的
+                                 0, // Log 相关的参数
+                                 NULL // Log 相关的参数
+                                 );
     swr_init(swr_ctx);
     
     // 打开音频输入设备
@@ -97,7 +113,13 @@ void record() {
             memcpy((void *)src_data[0], (void *)pkt.data, pkt.size);
             
             // 重采样
-            swr_convert(swr_ctx, dst_data, 512, (const uint8_t **)src_data, 512);
+            swr_convert(
+                        swr_ctx, // 重采样的上下文
+                        dst_data, // 重采样的输出缓冲区的数据
+                        512, // 输出的采样数
+                        (const uint8_t **)src_data, // 输入的缓冲区的数据
+                        512 // 输入的采样数
+                        );
 
             fwrite(dst_data[0], 1, dst_linesize, outfile);
             fwrite(pkt.data, 1, pkt.size, originfile);
