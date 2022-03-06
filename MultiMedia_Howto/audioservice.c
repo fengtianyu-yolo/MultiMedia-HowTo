@@ -11,6 +11,7 @@
 #include "libavformat/avformat.h"
 #include "libavcodec/avcodec.h"
 #include <unistd.h>
+//#include "lib"
 
 void greeting() {
     
@@ -31,7 +32,7 @@ void record() {
     
     // 定义环境上下文变量
     AVFormatContext *fmt_ctx = NULL;
-    // 定义 devicename 参数: ':0'，冒号前面表示为视频设备；冒号后面代表音频设备，0表示第一个音频设备
+    // 定义 devicename 参数，指示从哪个设备读取数据； ':0'，冒号前面表示为视频设备；冒号后面代表音频设备，0表示第一个音频设备
     char *devicename = ":0";
     // 定义 参数选项 参数
     AVDictionary *options = NULL;
@@ -53,7 +54,7 @@ void record() {
     // 延迟1s，不然设备还没有准备好
     sleep(1);
     
-    // 打开文件
+    // 打开一个文件，用于将读取到的数据写入
     FILE *outfile = fopen("/Users/bytedance/Desktop/audio.pcm", "wb+");
 
     // 定义变量存储 读取音频数据的结果
@@ -65,6 +66,7 @@ void record() {
         
         // 读取到音频数据之后，将数据写入到文件中
         if (read_result == 0) {
+            printf("数据大小是 %d \n", pkt.size); // 这里打印出来显示是 2048，也就是一帧的音频数据大小是2048
             fwrite(pkt.data, pkt.size, 1, outfile);
             fflush(outfile);
         }
