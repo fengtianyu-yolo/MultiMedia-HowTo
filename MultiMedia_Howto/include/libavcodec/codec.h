@@ -31,7 +31,7 @@
 #include "libavutil/samplefmt.h"
 
 #include "libavcodec/codec_id.h"
-#include "libavcodec/version.h"
+#include "libavcodec/version_major.h"
 
 /**
  * @addtogroup lavc_core
@@ -50,7 +50,12 @@
  * avcodec_default_get_buffer2 or avcodec_default_get_encode_buffer.
  */
 #define AV_CODEC_CAP_DR1                 (1 <<  1)
+#if FF_API_FLAG_TRUNCATED
+/**
+ * @deprecated Use parsers to always send proper frames.
+ */
 #define AV_CODEC_CAP_TRUNCATED           (1 <<  3)
+#endif
 /**
  * Encoder or decoder requires flushing with NULL input at the end in order to
  * give the complete and correct output.
@@ -214,12 +219,18 @@ typedef struct AVCodec {
      * see AV_CODEC_CAP_*
      */
     int capabilities;
+    uint8_t max_lowres;                     ///< maximum value for lowres supported by the decoder
     const AVRational *supported_framerates; ///< array of supported framerates, or NULL if any, array is terminated by {0,0}
     const enum AVPixelFormat *pix_fmts;     ///< array of supported pixel formats, or NULL if unknown, array is terminated by -1
     const int *supported_samplerates;       ///< array of supported audio samplerates, or NULL if unknown, array is terminated by 0
     const enum AVSampleFormat *sample_fmts; ///< array of supported sample formats, or NULL if unknown, array is terminated by -1
+#if FF_API_OLD_CHANNEL_LAYOUT
+    /**
+     * @deprecated use ch_layouts instead
+     */
+    attribute_deprecated
     const uint64_t *channel_layouts;         ///< array of support channel layouts, or NULL if unknown. array is terminated by 0
-    uint8_t max_lowres;                     ///< maximum value for lowres supported by the decoder
+#endif
     const AVClass *priv_class;              ///< AVClass for the private context
     const AVProfile *profiles;              ///< array of recognized profiles, or NULL if unknown, array is terminated by {FF_PROFILE_UNKNOWN}
 
@@ -235,6 +246,11 @@ typedef struct AVCodec {
      */
     const char *wrapper_name;
 
+    /**
+     * Array of supported channel layouts, terminated with a zeroed layout.
+     */
+    const AVChannelLayout *ch_layouts;
+
     /*****************************************************************
      * No fields below this line are part of the public API. They
      * may not be used outside of libavcodec and can be changed and
@@ -242,10 +258,13 @@ typedef struct AVCodec {
      * New public fields should be added right above.
      *****************************************************************
      */
+    /**
+     * Internal codec capabilities.
+     * See FF_CODEC_CAP_* in internal.h
+     */
+    int caps_internal;
+
     int priv_data_size;
-#if FF_API_NEXT
-    struct AVCodec *next;
-#endif
     /**
      * @name Frame-level threading support functions
      * @{
@@ -258,6 +277,11 @@ typedef struct AVCodec {
      * dst and src will (rarely) point to the same context, in which case memcpy should be skipped.
      */
     int (*update_thread_context)(struct AVCodecContext *dst, const struct AVCodecContext *src);
+
+    /**
+     * Copy variables back to the user-facing context
+     */
+    int (*update_thread_context_for_user)(struct AVCodecContext *dst, const struct AVCodecContext *src);
     /** @} */
 
     /**
@@ -321,11 +345,6 @@ typedef struct AVCodec {
      * Will be called when seeking
      */
     void (*flush)(struct AVCodecContext *);
-    /**
-     * Internal codec capabilities.
-     * See FF_CODEC_CAP_* in internal.h
-     */
-    int caps_internal;
 
     /**
      * Decoding only, a comma-separated list of bitstream filters to apply to
@@ -365,7 +384,7 @@ const AVCodec *av_codec_iterate(void **opaque);
  * @param id AVCodecID of the requested decoder
  * @return A decoder if one was found, NULL otherwise.
  */
-AVCodec *avcodec_find_decoder(enum AVCodecID id);
+const AVCodec *avcodec_find_decoder(enum AVCodecID id);
 
 /**
  * Find a registered decoder with the specified name.
@@ -373,7 +392,7 @@ AVCodec *avcodec_find_decoder(enum AVCodecID id);
  * @param name name of the requested decoder
  * @return A decoder if one was found, NULL otherwise.
  */
-AVCodec *avcodec_find_decoder_by_name(const char *name);
+const AVCodec *avcodec_find_decoder_by_name(const char *name);
 
 /**
  * Find a registered encoder with a matching codec ID.
@@ -381,7 +400,7 @@ AVCodec *avcodec_find_decoder_by_name(const char *name);
  * @param id AVCodecID of the requested encoder
  * @return An encoder if one was found, NULL otherwise.
  */
-AVCodec *avcodec_find_encoder(enum AVCodecID id);
+const AVCodec *avcodec_find_encoder(enum AVCodecID id);
 
 /**
  * Find a registered encoder with the specified name.
@@ -389,7 +408,7 @@ AVCodec *avcodec_find_encoder(enum AVCodecID id);
  * @param name name of the requested encoder
  * @return An encoder if one was found, NULL otherwise.
  */
-AVCodec *avcodec_find_encoder_by_name(const char *name);
+const AVCodec *avcodec_find_encoder_by_name(const char *name);
 /**
  * @return a non-zero number if codec is an encoder, zero otherwise
  */
@@ -399,6 +418,15 @@ int av_codec_is_encoder(const AVCodec *codec);
  * @return a non-zero number if codec is a decoder, zero otherwise
  */
 int av_codec_is_decoder(const AVCodec *codec);
+
+/**
+ * Return a name for the specified profile, if available.
+ *
+ * @param codec the codec that is searched for the given profile
+ * @param profile the profile value for which a name is requested
+ * @return A name for the profile if found, NULL otherwise.
+ */
+const char *av_get_profile_name(const AVCodec *codec, int profile);
 
 enum {
     /**

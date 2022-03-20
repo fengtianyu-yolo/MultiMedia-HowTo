@@ -79,6 +79,45 @@ void record() {
                                  NULL // Log 相关的参数
                                  );
     swr_init(swr_ctx);
+    /* -END 重采样相关变量定义完成 END- */
+    
+    /* 编码相关变量定义 */
+    // 获取编码器
+    AVCodec *codec = avcodec_find_encoder_by_name("libfdk_aac");
+    // 创建编码上下文
+    AVCodecContext *codec_ctx = avcodec_alloc_context3(codec);
+    codec_ctx->sample_fmt = AV_SAMPLE_FMT_S16;
+    codec_ctx->channel_layout = AV_CH_LAYOUT_MONO;
+    codec_ctx->sample_rate = 48000;
+    codec_ctx->bit_rate = 64000;
+    
+    // 音频的输入数据
+    AVFrame *frame = av_frame_alloc();
+    if (!frame) {
+        printf("编码输入数据没有创建成功 \n");
+        exit(0);
+    }
+    frame->nb_samples = 512; // 采样数
+    frame->format = AV_SAMPLE_FMT_S16;
+    frame->channel_layout = AV_CH_LAYOUT_MONO;
+    av_frame_get_buffer(frame, 0);
+    if (!frame->buf[0]) {
+        printf("编码输入缓冲区没有创建成功 \n");
+        exit(0);
+    }
+    
+    
+    // 编码后的音频数据
+    AVPacket *new_pkt = av_packet_alloc();
+    if (!new_pkt) {
+        printf("编码输出数据没有创建成功 \n");
+    }
+    
+    int codec_open_result = avcodec_open2(codec_ctx, codec, NULL);
+    if (codec_open_result < 0) {
+        printf("编码器打开结果: %d \n", codec_open_result);
+        exit(0);
+    }
     
     // 打开音频输入设备
     int open_result = avformat_open_input(&fmt_ctx, devicename, input_format, &options);
@@ -95,7 +134,7 @@ void record() {
     sleep(1);
     
     // 打开一个文件，用于将读取到的数据写入
-    FILE *outfile = fopen("/Users/bytedance/Desktop/audio.pcm", "wb+");
+    FILE *outfile = fopen("/Users/bytedance/Desktop/audio.aac", "wb+");
     FILE *originfile = fopen("/Users/bytedance/Desktop/origin_audio.pcm", "wb+");
 
     // 定义变量存储 读取音频数据的结果
@@ -121,10 +160,30 @@ void record() {
                         512 // 输入的采样数
                         );
 
-            fwrite(dst_data[0], 1, dst_linesize, outfile);
+            // 将重采样的数据拷贝到输入编码区
+            memcpy((void *)frame->data[0], dst_data[0], dst_linesize);
+            
+            // 将重采样后的一帧数据放到编码器缓冲区
+            int ret = avcodec_send_frame(codec_ctx, frame);
+            
+            while(ret >= 0) {
+                // 从编码器输出缓冲区取编码后的数据
+                ret = avcodec_receive_packet(codec_ctx, new_pkt);
+                if (ret < 0) {
+                    // 输出缓冲区的数据读取完了
+                    if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF) {
+                        printf("编码后的数据读取完了 \n");
+                        break;
+                    } else {
+                        exit(0);
+                    }
+                }
+            }
+            
+            fwrite(new_pkt->data, 1, new_pkt->size, outfile);
             fwrite(pkt.data, 1, pkt.size, originfile);
             
-            printf("重采样的数据大小 = %d", dst_linesize);
+            printf("编码的数据大小 = %d \n", new_pkt->size);
 
             fflush(outfile);
             fflush(originfile);
@@ -154,6 +213,10 @@ void record() {
     
     // 释放重采样上下文
     swr_free(&swr_ctx);
+    
+    // 释放编码输入和输出缓冲区
+    av_frame_free(&frame);
+    av_packet_free(&new_pkt);
     
     // 释放上下文环境
     avformat_close_input(&fmt_ctx);
