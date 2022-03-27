@@ -34,7 +34,7 @@ void record() {
     // 定义环境上下文变量
     AVFormatContext *fmt_ctx = NULL;
     // 定义 devicename 参数，指示从哪个设备读取数据； ':0'，冒号前面表示为视频设备；冒号后面代表音频设备，0表示第一个音频设备
-    char *devicename = ":0";
+    char *devicename = ":1";
     // 定义 参数选项 参数
     AVDictionary *options = NULL;
     
@@ -165,6 +165,7 @@ void record() {
             
             // 将重采样后的一帧数据放到编码器缓冲区
             int ret = avcodec_send_frame(codec_ctx, frame);
+            printf("输入编码缓冲区了 \n");
             
             while(ret >= 0) {
                 // 从编码器输出缓冲区取编码后的数据
@@ -172,20 +173,23 @@ void record() {
                 if (ret < 0) {
                     // 输出缓冲区的数据读取完了
                     if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF) {
-                        printf("编码后的数据读取完了 \n");
+                        printf("输出缓冲区重试错误 \n");
+                        break;
+                    } else if (ret == AVERROR_EOF) {
+                        printf("输出缓冲区读完了 \n");
                         break;
                     } else {
                         exit(0);
                     }
+                } else {
+                    fwrite(new_pkt->data, 1, new_pkt->size, outfile);
+                    fflush(outfile);
+                    printf("编码的数据大小 = %d \n", new_pkt->size);
+                    printf("编码后的数据获取成功 %d \n", new_pkt->size);
                 }
             }
             
-            fwrite(new_pkt->data, 1, new_pkt->size, outfile);
             fwrite(pkt.data, 1, pkt.size, originfile);
-            
-            printf("编码的数据大小 = %d \n", new_pkt->size);
-
-            fflush(outfile);
             fflush(originfile);
         }
 
