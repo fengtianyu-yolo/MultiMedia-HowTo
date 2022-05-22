@@ -15,6 +15,66 @@
 
 static int video_recoding = 0;
 
+
+/// 打开编码器
+/// @param width 分辨率的宽度
+/// @param height 分辨率的高度
+/// @param enc_ctx 编码器上下文
+static void open_encoder(int width, int height, AVCodecContext **enc_ctx) {
+    
+    // 获取编码器
+    AVCodec *codec = NULL;
+    codec = avcodec_find_decoder_by_name("libx264");
+    if (!codec) {
+        printf("没有获取到编码器! \n");
+        exit(1);
+    }
+    
+    // 开辟编码器的上下文环境
+    *enc_ctx = avcodec_alloc_context3(codec);
+    if (!enc_ctx) {
+        printf("开辟编码器上下文环境失败! \n");
+        exit(1);
+    }
+    
+    // 设置编码的SPS参数
+    (*enc_ctx)->profile = FF_PROFILE_H264_HIGH_444; // 设置profile参数，FF_PROFILE_H264_HIGH_444:最高级别,支持的压缩特性最多 (required)
+    (*enc_ctx)->level = 50; // Level是5.0 ，5.0支持的清晰度就很高，支持720P (required)
+    
+    // 设置编码的分辨率
+    (*enc_ctx)->width = width; // (required)
+    (*enc_ctx)->height = height; // (required)
+    
+    // 编码中GOP的设置
+    (*enc_ctx)->gop_size = 250; // 设置的值小了，I帧就很多，码流就很大。设置的大了，I帧就很少，但是如果传输的时候如果I帧丢了，等下一个I帧要等的时间比较长。 (required)
+    (*enc_ctx)->keyint_min = 25; // 这一组GOP中最小插入I帧的间隔。如果设置的GOP的时间特别长，在这个过程中有很多的图像有很多的变化的时候，达到这个最小值的时候也会自动的插入一个I帧 (optional)
+    
+    // 设置B帧的数量
+    (*enc_ctx)->max_b_frames = 3; // 为了减少码流的大小，可以增加B帧。一般不超过3帧。 (optional)
+    (*enc_ctx)->has_b_frames = 1; // (optional)
+    
+    // 设置参考帧的数量，让解码器解码的时候知道数组中有多少帧 (optional)
+    (*enc_ctx)->refs = 3; // 一般为 3 4 5，参考帧越多，还原性越好，处理的越慢；不设置的话编码器有默认值
+    
+    // 设置输入的YUV格式 (required)
+    (*enc_ctx)->pix_fmt = AV_PIX_FMT_YUVA420P;
+    
+    // 设置码率 (required)
+    (*enc_ctx)->bit_rate = 600000; // 600 kbps，根据640*480*25计算出来码率
+    
+    // 设置帧率 (required)
+    (*enc_ctx)->time_base = (AVRational){1, 25}; // 帧与帧之间的间隔，每帧时间25分之1秒
+    (*enc_ctx)->framerate = (AVRational){25, 1};  // 帧率每秒25帧
+    
+    int ret = avcodec_open2((*enc_ctx), codec, NULL);
+    if (ret < 0) {
+        printf("编码器打开失败 \n");
+        exit(1);
+    }
+    
+    
+}
+
 void record_video(void) {
     
     // 注册设备
@@ -52,6 +112,10 @@ void record_video(void) {
 
     // 定义输出文件
     FILE *outfile = fopen("/Users/bytedance/Desktop/video.yuv", "wb+");
+    
+    // 打开编码器
+    AVCodecContext *enc_ctx = NULL;
+    open_encoder(640, 480, &enc_ctx);
     
     int ret = 0;
     // 读取数据
