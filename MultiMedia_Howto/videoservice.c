@@ -155,9 +155,23 @@ void record_video(void) {
         if (ret == 0) {
             // 不设置pix_format的时候，是uvyv422格式的，所以每一帧的数据长度就是 640*480*2 = 614400；
             // 当设置了 pix_format 是 nv12的时候，每一帧的数据长度 = 640*480*1.5 = 460800；
-            printf("写入数据长度: %d \n", pkt.size);
-            fwrite(pkt.data, 1, 460800, outfile);
-            fflush(outfile);
+//            printf("写入数据长度: %d \n", pkt.size);
+//            fwrite(pkt.data, 1, 460800, outfile);
+//            fflush(outfile);
+            
+            // 将NV12 转为 YUV420P
+            // NV12 的格式是： YYYYYYYYUVUV ; YUV420P的格式是：YYYYYYYYUUVV
+            memcpy(frame->data[0], pkt.data, 307200); // copy Y数据，把pkt.data中的Y数据放到 data[0]，数据的长度是307200，307200的计算= 640 * 480
+            // 307200之后是UV数据, 分离UV数据
+            for (int i=0; i<307200/4; i++) {
+                frame->data[1][i] = pkt.data[307200+i*2];
+                frame->data[2][i] = pkt.data[307200+i*2+1];
+            }
+            
+            fwrite(frame->data[0], 1, 307200, outfile);
+            fwrite(frame->data[1], 1, 307200/4, outfile);
+            fwrite(frame->data[2], 1, 307200/4, outfile);
+
         }
         printf("视频读取结果: %d \n", ret);
         
