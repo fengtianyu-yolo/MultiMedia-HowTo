@@ -13,6 +13,9 @@
 #include <unistd.h>
 #include <libswresample/swresample.h>
 
+#define VIDEO_WIDTH 640
+#define VIDEO_HEIGHT 480
+
 static int video_recoding = 0;
 
 
@@ -71,8 +74,26 @@ static void open_encoder(int width, int height, AVCodecContext **enc_ctx) {
         printf("编码器打开失败 \n");
         exit(1);
     }
+        
+}
+
+static AVFrame* create_frame(int width, int height) {
     
+    AVFrame *frame = av_frame_alloc();
     
+    // 设置frame的参数
+    frame->width = width;
+    frame->height = height;
+    frame->format = AV_PIX_FMT_YUVA420P;
+    
+    // 设置buffer大小
+    int ret = av_frame_get_buffer(frame, 32); // 视频里面必须是32位对齐的。
+    if (ret < 0) {
+        printf("开辟buffer失败\n");
+        exit(1);
+    }
+    
+    return frame;
 }
 
 void record_video(void) {
@@ -108,14 +129,23 @@ void record_video(void) {
     // 定义存放读取到的数据的Packet
     AVPacket pkt;
     av_init_packet(&pkt);
-//    av_new_packet(&pkt, 4096);
 
     // 定义输出文件
     FILE *outfile = fopen("/Users/bytedance/Desktop/video.yuv", "wb+");
     
     // 打开编码器
     AVCodecContext *enc_ctx = NULL;
-    open_encoder(640, 480, &enc_ctx);
+    open_encoder(VIDEO_WIDTH, VIDEO_HEIGHT, &enc_ctx);
+    
+    // 创建AVFrame
+    AVFrame *frame = create_frame(VIDEO_WIDTH, VIDEO_HEIGHT);
+    
+    // 创建编码后输出的Packet
+    AVPacket *newpkt = av_packet_alloc();
+    if (!newpkt) {
+        printf("Packet创建失败 ! \n");
+        exit(1);
+    }
     
     int ret = 0;
     // 读取数据
