@@ -9,10 +9,12 @@ import Cocoa
 
 class ViewController: NSViewController {
 
-    let buttonSize = NSSize(width: 80, height: 30)
+    let buttonSize = NSSize(width: 80, height: 44)
     let frameSize = NSSize(width: 320, height: 240)
     
     var button: NSButton?
+    var recordVideoButton: NSButton?
+    var isRecodingVideo = false
     
     var isRecoding = false
     var recordThread: Thread?
@@ -30,6 +32,13 @@ class ViewController: NSViewController {
             view.addSubview(btn)
         }
         
+        recordVideoButton = NSButton(title: "⏸", target: self, action: #selector(recordVideoAction))
+        recordVideoButton?.frame = NSRect(x: (frameSize.width-buttonSize.width)/2, y: (frameSize.height-buttonSize.height)/2 + buttonSize.height + 40, width: buttonSize.width, height: buttonSize.height)
+        recordVideoButton?.setButtonType(.pushOnPushOff)
+        if let btn = recordVideoButton {
+            view.addSubview(btn)
+        }
+        
         view.window?.center()
         
     }
@@ -40,7 +49,32 @@ class ViewController: NSViewController {
         }
     }
     
-    // MARK: - Event Action
+    // MARK: - Video Event Actions
+    
+    @objc func recordVideoAction() {
+        isRecodingVideo = !isRecodingVideo
+        
+        if isRecodingVideo {
+            recordVideoButton?.title = "⏺"
+            
+            update_video_recording_status(1);
+            
+            // 开启子线程，进行录制
+            recordThread = Thread(target: self, selector: #selector(startRecordingVideo), object: nil)
+            recordThread?.start()
+        } else {
+            recordVideoButton?.title = "⏸"
+            update_video_recording_status(0);
+            
+            recordThread?.cancel()
+        }
+    }
+    
+    @objc func startRecordingVideo() {
+        record_video();
+    }
+    
+    // MARK: - Audio Actions
     
     @objc func buttonClicked() {
         isRecoding = !isRecoding
