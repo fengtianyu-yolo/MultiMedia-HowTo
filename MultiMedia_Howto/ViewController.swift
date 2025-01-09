@@ -85,6 +85,7 @@ class ViewController: NSViewController {
             
             // 更新当前录制状态未录制中
             updateRecodeState(1)
+            updateCaptureState(1)
             
             // 开启子线程，进行录音
             recordThread = Thread(target: self, selector: #selector(recordAction), object: nil)
@@ -93,11 +94,17 @@ class ViewController: NSViewController {
             button?.title = "开始录音"
             
             updateRecodeState(0)
+            updateCaptureState(0)
         }
     }
 
     @objc func recordAction() {
-        record()
+        // 采集和编码
+//        record()
+        
+        // 音频采集
+        capture()
+        
     }
 
 }

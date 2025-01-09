@@ -108,7 +108,7 @@ void record_video(void) {
     char *device_name = "0";
     
     // 设置采集格式
-    AVInputFormat *input_fmt = av_find_input_format("avfoundation");
+    const AVInputFormat *input_fmt = av_find_input_format("avfoundation");
     
     // 定义打开设备的参数
     AVDictionary *options = NULL;

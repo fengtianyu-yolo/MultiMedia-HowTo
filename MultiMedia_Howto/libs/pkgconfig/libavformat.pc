@@ -5,10 +5,10 @@ includedir=/usr/local/ffmpeg/include
 
 Name: libavformat
 Description: FFmpeg container format library
-Version: 59.20.101
+Version: 61.9.104
 Requires: 
-Requires.private: libavcodec >= 59.25.100, libswresample >= 4.6.100, libavutil >= 57.24.101
+Requires.private: libavcodec >= 61.31.100, libswresample >= 5.4.100, libavutil >= 59.54.101
 Conflicts:
 Libs: -L${libdir}  -lavformat 
-Libs.private: -lm -lbz2 -lz -Wl,-framework,CoreFoundation -Wl,-framework,Security
+Libs.private: -lm -lbz2 -L/usr/lib -lz -framework CoreFoundation -framework Security
 Cflags: -I${includedir}

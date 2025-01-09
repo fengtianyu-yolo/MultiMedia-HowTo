@@ -12,8 +12,10 @@
 #include "libavcodec/avcodec.h"
 #include <unistd.h>
 #include <libswresample/swresample.h>
+#include <libavutil/channel_layout.h>
 
-void greeting() {
+
+void greeting(void) {
     
     printf("ok! you call c function success. \n");
     
@@ -25,7 +27,7 @@ void greeting() {
 // 定义一个变量，指示当前是否在录制中
 static int recoding = 0;
 
-void record() {
+void record(void) {
     
     // 注册设备
     avdevice_register_all();
@@ -39,7 +41,7 @@ void record() {
     AVDictionary *options = NULL;
     
     // 设备的采集格式
-    AVInputFormat *input_format = av_find_input_format("avfoundation");
+    const AVInputFormat *input_format = av_find_input_format("avfoundation");
     
     /* 重采样相关变量的定义 */
     // 定义变量 存储输入缓冲区的地址
@@ -62,7 +64,7 @@ void record() {
     // 创建输出缓冲区
     av_samples_alloc_array_and_samples(&dst_data, &dst_linesize, 1, 512, AV_SAMPLE_FMT_S16, 0);
     
-    
+    /*   原来的写法
     // 创建重采样上下文
     SwrContext *swr_ctx = NULL;
     
@@ -78,12 +80,37 @@ void record() {
                                  0, // Log 相关的参数
                                  NULL // Log 相关的参数
                                  );
+    */
+    
+    // 初始化输入音频参数 新版本写法
+    int64_t in_ch_layout = AV_CH_LAYOUT_MONO; // 输入的声道格式，单声道，在中间
+    enum AVSampleFormat in_sample_fmt = AV_SAMPLE_FMT_FLT; // 输入的采样格式 32位的
+    int in_sample_rate = 48000; // 输入的采样率
+    AVChannelLayout in_channel_layout;
+    av_channel_layout_default(&in_channel_layout, in_ch_layout); // 单声道
+    
+    // 初始化输出音频参数
+    int64_t out_ch_layout = AV_CH_LAYOUT_MONO; // 输出的声道格式，单声道，在中间
+    enum AVSampleFormat out_sample_fmt = AV_SAMPLE_FMT_S16; // 输出的采样格式 16位的
+    int out_sample_rate = 44100; // 输出的采样率
+    AVChannelLayout out_channel_layout;
+    av_channel_layout_default(&out_channel_layout, out_ch_layout); // 单声道 ，传入1也行，可以试试？
+    
+    struct SwrContext *swr_ctx = swr_alloc_set_opts2(NULL,
+                                                     &out_channel_layout,
+                                                     out_sample_fmt,
+                                                     out_sample_rate,
+                                                     &in_channel_layout,
+                                                     in_sample_fmt,
+                                                     in_sample_rate,
+                                                     0, NULL);
+    
     swr_init(swr_ctx);
     /* -END 重采样相关变量定义完成 END- */
     
     /* 编码相关变量定义 */
     // 获取编码器
-    AVCodec *codec = avcodec_find_encoder_by_name("libfdk_aac");
+    const AVCodec *codec = avcodec_find_encoder_by_name("libfdk_aac");
     // 创建编码上下文
     AVCodecContext *codec_ctx = avcodec_alloc_context3(codec);
     codec_ctx->sample_fmt = AV_SAMPLE_FMT_S16;
@@ -100,6 +127,11 @@ void record() {
     frame->nb_samples = 512; // 采样数
     frame->format = AV_SAMPLE_FMT_S16;
     frame->channel_layout = AV_CH_LAYOUT_MONO;
+    /*
+    AVChannelLayout layout;
+    av_channel_layout_default(&layout, AV_CHANNEL_LAYOUT_MONO);
+    frame->ch_layout = layout;
+     */
     av_frame_get_buffer(frame, 0);
     if (!frame->buf[0]) {
         printf("编码输入缓冲区没有创建成功 \n");

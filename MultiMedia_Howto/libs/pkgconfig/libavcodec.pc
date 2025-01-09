@@ -5,10 +5,10 @@ includedir=/usr/local/ffmpeg/include
 
 Name: libavcodec
 Description: FFmpeg codec library
-Version: 59.25.100
+Version: 61.31.100
 Requires: 
-Requires.private: libswresample >= 4.6.100, libavutil >= 57.24.101
+Requires.private: libswresample >= 5.4.100, libavutil >= 59.54.101
 Conflicts:
 Libs: -L${libdir}  -lavcodec 
-Libs.private: -liconv -lm -llzma -framework AudioToolbox -L/usr/local/Cellar/fdk-aac/2.0.2/lib -lfdk-aac -L/usr/local/Cellar/x264/r3060/lib -lx264 -L/usr/local/Cellar/x265/3.5/lib -lx265 -pthread -lz -framework VideoToolbox -framework CoreFoundation -framework CoreMedia -framework CoreVideo -framework CoreServices
+Libs.private: -liconv -lm -framework AudioToolbox -L/opt/homebrew/Cellar/fdk-aac/2.0.3/lib -lfdk-aac -L/opt/homebrew/Cellar/x264/r3108/lib -lx264 -L/opt/homebrew/Cellar/x265/4.1/lib -lx265 -pthread -L/usr/lib -lz -framework VideoToolbox -framework CoreFoundation -framework CoreMedia -framework CoreVideo -framework CoreServices
 Cflags: -I${includedir}
